@@ -1,0 +1,106 @@
+<div id="grid4"></div>
+<script>
+
+    Ext.Loader.setConfig({enabled: true});
+    Ext.Loader.setPath('Ext', '/ext-5.0.1');
+    Ext.require([
+        'Ext.grid.*',
+        'Ext.data.*'
+    ]);
+    Ext.onReady(function() {
+
+        Ext.define('myModel', {
+            extend: 'Ext.data.Model',
+            fields: ['name','city','view_education']
+        });
+        var fm = Ext.form;
+        var store = Ext.create('Ext.data.Store', {
+
+            model: 'myModel',
+            pageSize: 1,
+            proxy: {
+                type: 'ajax',
+                url: "<?php echo $this->url('data'); ?>",
+                actionMethods: {
+                    read: 'POST'
+                },
+                reader: {
+                    type: 'json',
+                    root: 'data'
+
+                }
+            },
+
+            autoLoad: {start: 0, limit: 5},
+            remoteSort: true
+
+        });
+
+        var filters = {
+            ftype: 'filters',
+            encode: true,
+            local: false
+        };
+        console.log(store);
+        var grid = Ext.create('Ext.grid.Panel', {
+
+            store: store,
+            plugins: [
+                Ext.create('Ext.grid.plugin.CellEditing', {
+                    clicksToEdit : 1
+                })
+            ],
+            columns: [
+                {
+                    text     : 'Имя',
+                    dataIndex: 'name',
+                    filter: {
+                        type: 'string'
+                    }
+                },
+
+                {
+                    text     : 'Город',
+                    dataIndex: 'city',
+                    filter: {
+                        type: 'string'
+                    }
+                },
+                {
+                    text     : 'Ученная степень',
+                    dataIndex: 'view_education',
+                    editor: new fm.TextField({
+                        allowBlank: false,
+                        listeners : {
+                            change : function(field, e) {
+                                Ext.Ajax.request({
+                                    url: "<?php echo $this->url('update') ?>", // your backend url
+                                    method: 'POST',
+                                    params: {
+                                        'id': grid.getSelectionModel().select(store.id),
+                                        'view_education': field.getValue()
+                                    }
+                                });
+                            }
+                        }
+                    })
+
+                }
+
+            ],
+            height: 350,
+            width: 800,
+            title: 'Простейшая статическая таблица grid',
+            renderTo: 'grid4',
+            bbar: Ext.create('Ext.PagingToolbar', {
+                store: store,
+
+                displayInfo: true,
+                displayMsg: 'Displaying topics {0} - {1} of {2}',
+                emptyMsg: "No topics to display"
+            })
+        });
+
+    });
+
+</script>
