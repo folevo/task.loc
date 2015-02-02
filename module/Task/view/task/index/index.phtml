@@ -1,25 +1,26 @@
 <div id="grid4"></div>
 <script>
-    //конфигурация extjs
+
     Ext.Loader.setConfig({enabled: true});
     Ext.Loader.setPath('Ext', '/ext-5.0.1');
-    //подключение расширений
     Ext.require([
         'Ext.grid.*',
-        'Ext.data.*'
+        'Ext.data.*',
+        'Ext.selection.CheckboxModel'
     ]);
     Ext.onReady(function() {
-//инициализация модели
+
+
         Ext.define('myModel', {
             extend: 'Ext.data.Model',
-            fields: ['name','city','view_education']
+            fields: ['name','city','view_education','id']
         });
         var fm = Ext.form;
-//получение данных
+
         var store = Ext.create('Ext.data.Store', {
 
             model: 'myModel',
-
+            pageSize: 2,
             proxy: {
                 type: 'ajax',
                 url: "<?php echo $this->url('data'); ?>",
@@ -30,21 +31,26 @@
                     type: 'json',
                     root: 'data'
 
-                },
-                pageSize: 1
+                }
             },
-//задание количества выбираемых данных из бд
+            filters: [
+                {
+                    property: 'name',
+                    value   : /[A-Za-z]/
+                }],
             autoLoad: {start: 0, limit: 5},
             remoteSort: true
 
+
         });
-//фильты
+store.load();
+
         var filters = {
             ftype: 'filters',
             encode: true,
             local: false
         };
-        //создание панели грида
+        console.log(store);
         var grid = Ext.create('Ext.grid.Panel', {
 
             store: store,
@@ -54,6 +60,13 @@
                 })
             ],
             columns: [
+                {
+                    text     : 'Имя',
+                    dataIndex: 'name',
+                    filter: {
+                        type: 'string'
+                    }
+                },
                 {
                     text     : 'Имя',
                     dataIndex: 'name',
