@@ -1,23 +1,25 @@
 <div id="grid4"></div>
 <script>
-
+    //конфигурация extjs
     Ext.Loader.setConfig({enabled: true});
     Ext.Loader.setPath('Ext', '/ext-5.0.1');
+    //подключение расширений
     Ext.require([
         'Ext.grid.*',
         'Ext.data.*'
     ]);
     Ext.onReady(function() {
-
+//инициализация модели
         Ext.define('myModel', {
             extend: 'Ext.data.Model',
             fields: ['name','city','view_education']
         });
         var fm = Ext.form;
+//получение данных
         var store = Ext.create('Ext.data.Store', {
 
             model: 'myModel',
-            pageSize: 1,
+
             proxy: {
                 type: 'ajax',
                 url: "<?php echo $this->url('data'); ?>",
@@ -28,20 +30,21 @@
                     type: 'json',
                     root: 'data'
 
-                }
+                },
+                pageSize: 1
             },
-
+//задание количества выбираемых данных из бд
             autoLoad: {start: 0, limit: 5},
             remoteSort: true
 
         });
-
+//фильты
         var filters = {
             ftype: 'filters',
             encode: true,
             local: false
         };
-        console.log(store);
+        //создание панели грида
         var grid = Ext.create('Ext.grid.Panel', {
 
             store: store,
