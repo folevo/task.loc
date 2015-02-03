@@ -2,10 +2,11 @@
 <script>
 
     Ext.Loader.setConfig({enabled: true});
-    Ext.Loader.setPath('Ext.ux', '/ext-4.2.1.883/ux');
+    Ext.Loader.setPath('Ext', '/ext-4.2.1.883');
     Ext.require([
-        'Ext.ux.grid.FiltersFeature',
-        'Ext.ux.grid.filter.ListFilter'
+        'Ext.grid.*',
+        'Ext.data.*',
+        'Ext.selection.CheckboxModel'
     ]);
     Ext.onReady(function() {
 
@@ -51,8 +52,8 @@ store.load();
         };
         console.log(store);
         var grid = Ext.create('Ext.grid.Panel', {
+
             store: store,
-            features: [filters],
             plugins: [
                 Ext.create('Ext.grid.plugin.CellEditing', {
                     clicksToEdit : 1
