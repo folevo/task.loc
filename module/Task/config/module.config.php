@@ -36,6 +36,16 @@
                              'action' => 'update',
                          )
                      )
+                 ),
+                 'city' => array(
+                     'type' => 'Zend\Mvc\Router\Http\Literal',
+                     'options' => array(
+                         'route' => '/city',
+                         'defaults' => array(
+                             'controller' => 'Task\Controller\Index',
+                             'action' => 'city',
+                         )
+                     )
                  )
 
              )

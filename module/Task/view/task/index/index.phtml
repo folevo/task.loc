@@ -8,19 +8,26 @@
         'Ext.data.*',
         'Ext.selection.CheckboxModel'
     ]);
+
+
     Ext.onReady(function() {
-
-
+var city='empty';
+var education='empty';
+var name='empty';
         Ext.define('myModel', {
+            idProperty: 'id',
             extend: 'Ext.data.Model',
-            fields: ['name','city','view_education','id']
+            fields: ['name','city','view_education','user_id']
+
         });
         var fm = Ext.form;
-
-        var store = Ext.create('Ext.data.Store', {
+        var itemsPerPage = 1
+        var store = Ext.create('Ext.data.JsonStore', {
 
             model: 'myModel',
-            pageSize: 2,
+            fields: ['city', 'name', 'view_education','user_id'],
+            storeId: 'userStore',
+            pageSize: itemsPerPage,
             proxy: {
                 type: 'ajax',
                 url: "<?php echo $this->url('data'); ?>",
@@ -32,48 +39,227 @@
                     root: 'data'
 
                 }
+
+
+
             },
-            filters: [
-                {
-                    property: 'name',
-                    value   : /[A-Za-z]/
-                }],
+
             autoLoad: {start: 0, limit: 5},
             remoteSort: true
 
 
         });
-store.load();
 
-        var filters = {
+            new Ext.form.ComboBox({
+                listeners: {
+                    select: function(combo, record, index) {
+
+                        city=combo.value;
+
+
+                if(name=='empty' && education=='empty'){
+
+
+                        grid.store.load({
+                            params:{
+                                start:0,
+                                limit: 2,
+                                city: city
+                            }
+                        });
+                    }else if(name!='empty' && education=='empty'){
+                            grid.store.load({
+                                params:{
+                                    start:0,
+                                    limit: 2,
+                                    city: city,
+                                    view_education:education
+                                }
+                            });
+                        }else if(name=='empty' && education!='empty'){
+
+                    grid.store.load({
+                        params:{
+                            start:0,
+                            limit: 2,
+                            city: city,
+                            view_education:education
+
+                        }
+                    });
+                }else{
+                            grid.store.load({
+                                params:{
+                                    start:0,
+                                    limit: 2,
+                                    city: city,
+                                    view_education:education,
+                                    name: name
+                                }
+                                });
+                        }
+
+                        grid.getStore().reload({
+                            callback: function(){
+                                grid.getView().refresh();
+                            }
+                        });
+                    }
+                },
+                queryMode:'local',
+
+                    renderTo: 'grid4',
+
+            fieldLabel: 'Страна',
+
+            store:  {            // конфигурация хранилища
+
+                fields: [ 'city','id'],
+
+                data: <?php echo $city; ?>
+
+        },
+
+    displayField: 'city', // это текстовое значение <option>…</option>
+
+    valueField: 'city'   // а это значение поля <option value=»…»>
+
+
+
+            });
+        new Ext.form.ComboBox({
+            listeners: {
+                select: function(combo, record, index) {
+
+                    education=combo.value;
+
+
+
+
+                    if(city=='empty' && name=='empty'){
+
+
+                        grid.store.load({
+                            params:{
+                                start:0,
+                                limit: 2,
+                                view_education:education
+                            }
+                        });
+                    }else if(name=='empty' && city!='empty'){
+                        grid.store.load({
+                            params:{
+                                start:0,
+                                limit: 2,
+                                city: city,
+                                view_education:education
+                            }
+                        });
+                    }else if(name!='empty' && city=='empty'){
+                        grid.store.load({
+                            params:{
+                                start:0,
+                                limit: 2,
+
+                                view_education:education,
+                                name: name
+                            }
+                        });
+                    }else{
+                        grid.store.load({
+                            params:{
+                                start:0,
+                                limit: 2,
+                                city: city,
+                                view_education:education,
+                                name: name
+                            }
+                        });
+                    }
+                    grid.getStore().reload({
+                        callback: function(){
+                            grid.getView().refresh();
+                        }
+                    });
+                }
+            },
+            queryMode:'local',
+
+            renderTo: 'grid4',
+
+            fieldLabel: 'Ученная степень',
+
+            store:  {            // конфигурация хранилища
+
+                fields: [ 'view_education'],
+
+                data: <?php echo $view_education; ?>
+
+            },
+
+            displayField: 'view_education', // это текстовое значение <option>…</option>
+
+            valueField: 'view_education'   // а это значение поля <option value=»…»>
+
+
+
+        });
+
+
+
+    store.load({
+    params:{
+        start:0,
+        limit: itemsPerPage
+    }
+
+
+
+});
+
+
+       /* var store = Ext.data.StoreManager.lookup('userStore');
+        var userfilter = new Ext.util.Filter({
+            tyle:'list',
+            property: 'name',
+            value: 'dimas',
+            anyMatch: true,
+            caseSensitive: false,
+            data: 'data'
+        });*/
+       // store.filter(userfilter);
+      /****  var filters = {
             ftype: 'filters',
             encode: true,
             local: false
-        };
-        console.log(store);
-        var grid = Ext.create('Ext.grid.Panel', {
+        };*/
+
+
+    var grid = Ext.create('Ext.grid.Panel', {
 
             store: store,
+
+
+
             plugins: [
                 Ext.create('Ext.grid.plugin.CellEditing', {
                     clicksToEdit : 1
                 })
             ],
+
             columns: [
+
                 {
+
                     text     : 'Имя',
                     dataIndex: 'name',
                     filter: {
                         type: 'string'
                     }
+
                 },
-                {
-                    text     : 'Имя',
-                    dataIndex: 'name',
-                    filter: {
-                        type: 'string'
-                    }
-                },
+
+
 
                 {
                     text     : 'Город',
@@ -83,17 +269,20 @@ store.load();
                     }
                 },
                 {
+
                     text     : 'Ученная степень',
+
                     dataIndex: 'view_education',
                     editor: new fm.TextField({
                         allowBlank: false,
                         listeners : {
                             change : function(field, e) {
+
                                 Ext.Ajax.request({
                                     url: "<?php echo $this->url('update') ?>", // your backend url
                                     method: 'POST',
                                     params: {
-                                        'id': grid.getSelectionModel().select(store.id),
+                                        'id': grid.getSelectionModel().getSelection()[0].data.user_id,
                                         'view_education': field.getValue()
                                     }
                                 });
@@ -108,13 +297,12 @@ store.load();
             width: 800,
             title: 'Простейшая статическая таблица grid',
             renderTo: 'grid4',
-            bbar: Ext.create('Ext.PagingToolbar', {
-                store: store,
-
-                displayInfo: true,
-                displayMsg: 'Displaying topics {0} - {1} of {2}',
-                emptyMsg: "No topics to display"
-            })
+          dockedItems: [{
+              xtype: 'pagingtoolbar',
+              store: store,   // same store GridPanel is using
+              dock: 'bottom',
+              displayInfo: true
+          }]
         });
 
     });
