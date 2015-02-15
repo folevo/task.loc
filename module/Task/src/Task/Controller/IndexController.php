@@ -6,125 +6,96 @@ use Zend\Db\Adapter\Adapter;
 use Zend\Json\Json;
 use \PDO;
 use Zend\View\Model\JsonModel;
+
 class IndexController extends AbstractActionController
 {
+    public $adapter;
     public function indexAction()
     {
-        $adapter = new Adapter( array(
-                'driver' => 'Pdo',
-                'dsn' => 'mysql:dbname=task;host=localhost',
-                'username' => 'root',
-                'password' => '',
-                PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
-
-            )
-        );
+        //получение объекта адптер
+        $adapter = $this->getAdapter();
+        //создание запроса к базе данных
         $stmt = $adapter->createStatement('SELECT  id,city FROM city ');
+        //получение городов из баз даных и преобрпзование Json формат для combobox
         $results = $stmt->execute();
-        $city="[";
+        $city=array();
         foreach($results as $result){
-            $city.=Json::encode($result).",";
+            $city[]=$result;
 
         }
 
-        $city=substr($city, 0,-1);
-
-        $city.="]";
+        $city=Json::encode($city);
+        //создание запроса к базе данных
         $stmt = $adapter->createStatement('SELECT  view_education FROM education ');
+        //получение ученных степеней из баз даных и преобрпзование Json формат для combobox
         $results = $stmt->execute();
-        $view_education="[";
+        $view_education=array();
         foreach($results as $result){
-            $view_education.=Json::encode($result).",";
+            $view_education[]=$result;
 
         }
 
-        $view_education=substr($view_education, 0,-1);
-
-        $view_education.="]";
+        $view_education=Json::encode($view_education);
+        //ответ на запрос
         return new ViewModel(['view_education'=>$view_education,'city'=>$city]);
     }
-
+//метод возращающий данные в формате JSON
     public function dataAction()
     {
-
-        $adapter = new Adapter( array(
-                'driver' => 'Pdo',
-                'dsn' => 'mysql:dbname=task;host=localhost',
-                'username' => 'root',
-                'password' => '',
-                PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
-
-            )
-        );
-
+        //получение объекта адаптера
+        $adapter = $this->getAdapter();
+        //полученние объекта request
         $request = $this->getRequest();
 
-        //Получаем данные
+        //Получение  данных в зависимости от парматеров POST
 
         $start = $request->getPost('start') ? : 0;
         $limit = $request->getPost('limit') ? : 5;
-        if($request->getPost('city') &&  !$request->getPost('name') && !$request->getPost('view_education')){
-            $where="WHERE city = '".$request->getPost('city')."' " ;
-        }elseif(!$request->getPost('city') &&  $request->getPost('name') && !$request->getPost('view_education')){
-            $where="WHERE name = '".$request->getPost('name')."' " ;
-        }elseif(!$request->getPost('city') &&  !$request->getPost('name') && $request->getPost('view_education')){
-            $where="WHERE view_education = '".$request->getPost('view_education')."' " ;
-        }elseif($request->getPost('city') &&  !$request->getPost('name') && $request->getPost('view_education')){
-            $where="WHERE city = '".$request->getPost('city')."' AND view_education='".$request->getPost('view_education')."' " ;
-        }elseif($request->getPost('city') &&  $request->getPost('name') && !$request->getPost('view_education')){
-            $where="WHERE city = '".$request->getPost('city')."' AND name='".$request->getPost('name')."' " ;
-        }elseif(!$request->getPost('city') &&  $request->getPost('name') && $request->getPost('view_education')){
-            $where="WHERE view_education = '".$request->getPost('view_education')."' AND name='".$request->getPost('name')."' " ;
-        }elseif($request->getPost('city') &&  $request->getPost('name') && $request->getPost('view_education')){
-            $where="WHERE view_education = '".$request->getPost('view_education')."' AND name='".$request->getPost('name')."' AND city='".$request->getPost('city')."' " ;
-        }else{
-            $where="";
-        }
+        $where="";
+        $where = ($request->getPost('city') && !$request->getPost('view_education')) ?  $where.="WHERE city = '".$request->getPost('city')."' " :$where.= "";
+        $where = ($request->getPost('view_education') && !$request->getPost('city')) ?   $where.="WHERE view_education = '".$request->getPost('view_education')."' " : $where.= "";
+        $where = ($request->getPost('view_education') && $request->getPost('city')) ?   $where.="WHERE city = '".$request->getPost('city')."' AND view_education='".$request->getPost('view_education')."' " :  $where.="";
 
+//сортировка данных в зависмостри от параметра sort
         if($sort=$request->getPost('sort')){
             $sort=Json::decode(rtrim(ltrim($request->getPost('sort'),'['),']'),Json::TYPE_ARRAY);
             $sort="ORDER BY ".$sort['property']." ".$sort['direction'];
         }else{
             $sort='';
         }
+       //задание лимита выбираемых данных
         $offset = ' LIMIT '.$start.','.$limit;
-
+        //получение данных
         $stmt = $adapter->createStatement("SELECT  name,view_education,city,id as user_id  FROM userview  ".$where."GROUP BY id ".$sort." ".$offset);
         $results = $stmt->execute();
+        //подсчет количества строк в таблицы для передачи в грид
        $count=$adapter->createStatement('SELECT  COUNT(*) as total FROM userview')->execute();
         foreach($count as $ct){
             $total=$ct;
         }
 
+//создане массива и преобразования в Json для передачи в грид
 
-
-        $data="[";
+        $data=array();
         foreach($results as $result){
-            $data.=Json::encode($result).",";
+            $data[]=$result;
 
         }
 
-        $data=substr($data, 0,-1);
-        $data.=",".Json::encode($total);
-        $data.="]";
+
+        $data=Json::encode($data);
+        $total=Json::encode($total);
         $result = new JsonModel(array(
             'data' => $data,
+            'total'=>$total,
             'success'=>true,
         ));
 
         return $result;
     }
     public function updateAction(){
-
-        $adapter = new Adapter( array(
-                'driver' => 'Pdo',
-                'dsn' => 'mysql:dbname=task;host=localhost',
-                'username' => 'root',
-                'password' => '',
-                PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
-
-            )
-        );
+        //получение объекта адаптер для выполнения запроса на обновление
+        $adapter = $this->getAdapter();
         $sql = "UPDATE userview
 
         SET  view_education=:view_education
@@ -133,41 +104,25 @@ class IndexController extends AbstractActionController
 
 
 
-
+//создание запроса
 
         $stmt = $adapter->createStatement($sql);
+        //выполение запроса на обновлеие
         $stmt->execute([":id"=>$_POST['id'],":view_education"=>$_POST['view_education']]);
+        //получение объекта ответа
         $response = $this->getResponse();
+
+        //возврат объекта ответа
         return $response;
     }
-    public function cityAction(){
-        $adapter = new Adapter( array(
-                'driver' => 'Pdo',
-                'dsn' => 'mysql:dbname=task;host=localhost',
-                'username' => 'root',
-                'password' => '',
-                PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES \'UTF8\'',
-
-            )
-        );
-        $stmt = $adapter->createStatement('SELECT  id,city FROM city ');
-        $results = $stmt->execute();
-        $city="[";
-        foreach($results as $result){
-            $city.=Json::encode($result).",";
-
+    //метод для получения объекта адаптер
+    public function getAdapter()
+    {
+        if (!$this->adapter) {
+            $sm = $this->getServiceLocator();
+            $this->adapter = $sm->get('Zend\Db\Adapter\Adapter');
         }
-
-        $city=substr($city, 0,-1);
-
-        $city.="]";
-
-
-        $result = new JsonModel(array(
-            'city' => $city,
-            'success'=>true,
-        ));
-        return $result;
+        return $this->adapter;
     }
 
 }
