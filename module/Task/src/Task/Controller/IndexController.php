@@ -12,6 +12,7 @@ class IndexController extends AbstractActionController
     public $adapter;
     public function indexAction()
     {
+        //test
         //получение объекта адптер
         $adapter = $this->getAdapter();
         //создание запроса к базе данных
